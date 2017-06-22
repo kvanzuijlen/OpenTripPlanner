@@ -15,12 +15,9 @@ package org.opentripplanner.api.resource;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -49,6 +46,7 @@ import org.opentripplanner.api.common.RoutingResource;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.standalone.Router;
+import org.opentripplanner.util.ZipUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +131,7 @@ public class LIsochrone extends RoutingResource {
         for (File f : shapeDir.listFiles())
             f.deleteOnExit();
         /* Zip up the shapefile components */
-        StreamingOutput output = new DirectoryZipper(shapeDir);
+        StreamingOutput output = new ZipUtils(shapeDir);
         if (stream) {
             return Response.ok().entity(output).build();
         } else {
@@ -205,27 +203,6 @@ public class LIsochrone extends RoutingResource {
         tbuilder.add("the_geom", MultiPolygon.class);
         tbuilder.add("time", Integer.class); // TODO change to something more descriptive and lowercase
         return tbuilder.buildFeatureType();
-    }
-
-    // TODO Extract this to utility package?
-    private static class DirectoryZipper implements StreamingOutput {
-        private File directory;
-
-        DirectoryZipper(File directory) {
-            this.directory = directory;
-        }
-
-        @Override
-        public void write(OutputStream outStream) throws IOException {
-            ZipOutputStream zip = new ZipOutputStream(outStream);
-            for (File f : directory.listFiles()) {
-                zip.putNextEntry(new ZipEntry(f.getName()));
-                Files.copy(f, zip);
-                zip.closeEntry();
-                zip.flush();
-            }
-            zip.close();
-        }
     }
 
 }

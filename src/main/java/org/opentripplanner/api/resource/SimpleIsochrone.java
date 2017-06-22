@@ -13,29 +13,11 @@
 
 package org.opentripplanner.api.resource;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-
+import com.beust.jcommander.internal.Maps;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.io.Files;
+import com.vividsolutions.jts.geom.*;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureStore;
@@ -62,18 +44,18 @@ import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.opentripplanner.routing.vertextype.TransitStop;
 import org.opentripplanner.standalone.Router;
+import org.opentripplanner.util.ZipUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.beust.jcommander.internal.Maps;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Point;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.util.*;
 
 /**
  * This class provides a vector isochrone generator for places without good OSM street connectivity,
@@ -310,7 +292,7 @@ public class SimpleIsochrone extends RoutingResource {
         for (File f : shapeDir.listFiles())
             f.deleteOnExit();
         /* Zip up the shapefile components */  
-        StreamingOutput output = new DirectoryZipper(shapeDir);
+        StreamingOutput output = new ZipUtils(shapeDir);
         if (stream) {
             return Response.ok().entity(output).build();
         } else {
@@ -319,26 +301,6 @@ public class SimpleIsochrone extends RoutingResource {
             output.write(fos);
             zipFile.deleteOnExit();
             return Response.ok().entity(zipFile).build();
-        }
-    }   
-    
-    private static class DirectoryZipper implements StreamingOutput {
-        private File directory;
-        
-        DirectoryZipper(File directory){
-        	this.directory = directory;
-        }
-        
-        @Override
-        public void write(OutputStream outStream) throws IOException {
-            ZipOutputStream zip = new ZipOutputStream(outStream);
-            for (File f : directory.listFiles()) {
-                zip.putNextEntry(new ZipEntry(f.getName()));
-                Files.copy(f, zip);
-                zip.closeEntry();
-                zip.flush();
-            }
-            zip.close();
         }
     }
 
