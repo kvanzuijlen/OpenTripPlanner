@@ -1,15 +1,8 @@
 package org.opentripplanner.analyst;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import gnu.trove.iterator.TObjectIntIterator;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
-import org.apache.commons.math3.util.FastMath;
-import org.opentripplanner.analyst.request.SampleGridRenderer;
-import org.opentripplanner.analyst.request.SampleGridRenderer.WTWD;
-import org.opentripplanner.common.geometry.AccumulativeGridSampler;
 import org.opentripplanner.common.geometry.SparseMatrixZSampleGrid;
-import org.opentripplanner.common.geometry.SphericalDistanceLibrary;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.profile.AnalystProfileRouterPrototype;
 import org.opentripplanner.profile.ProfileRequest;
@@ -28,8 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.Map;
 
-import static org.apache.commons.math3.util.FastMath.toRadians;
-
 /**
  * A travel time surface. Timing information from the leaves of a ShortestPathTree.
  */
@@ -43,10 +34,11 @@ public class TimeSurface implements Serializable {
     public final int id;
     public final TObjectIntMap<Vertex> times = new TObjectIntHashMap<Vertex>(500000, 0.5f, UNREACHABLE);
     public final double lat, lon;
+    private final SampleGridBuilder sampleGridBuilder = new SampleGridBuilder();
     public int cutoffMinutes = 90; // this should really be copied from the data source but the new repeated raptor does not do so
     public long dateTime;
     public Map<String, String> params; // The query params sent by the user, for reference only
-    public SparseMatrixZSampleGrid<WTWD> sampleGrid; // another representation on a regular grid with a triangulation
+    public SparseMatrixZSampleGrid sampleGrid; // another representation on a regular grid with a triangulation
     public String description;
     public double walkSpeed = 1.33; // meters/sec TODO could we just store the whole routing request instead of params?
 
@@ -89,7 +81,7 @@ public class TimeSurface implements Serializable {
         LOG.info("Made TimeSurface from SPT in {} msec.", (int) (t1 - t0));
         
         if (makeSampleGrid)
-            makeSampleGrid(spt);
+            sampleGrid = sampleGridBuilder.makeSampleGrid(spt);
     }
 
     /** Make a max or min timesurface from propagated times in a ProfileRouter. */
@@ -177,59 +169,17 @@ public class TimeSurface implements Serializable {
 
     public int size() { return nextId; }
 
-    // TODO Lazy-initialize sample grid on demand so initial SPT finishes faster, and only isolines lag behind.
-    // however, the existing sampler needs an SPT, not general vertex-time mappings.
-    private void makeSampleGrid (ShortestPathTree spt) {
-        long t0 = System.currentTimeMillis();
-        final double gridSizeMeters = 300; // Todo: set dynamically and make sure this matches isoline builder params
-        final double V0 = 1.00; // off-road walk speed in m/sec
-        Coordinate coordinateOrigin = new Coordinate();
-        final double cosLat = FastMath.cos(toRadians(coordinateOrigin.y));
-        double dY = Math.toDegrees(gridSizeMeters / SphericalDistanceLibrary.RADIUS_OF_EARTH_IN_M);
-        double dX = dY / cosLat;
-        sampleGrid = new SparseMatrixZSampleGrid<WTWD>(16, spt.getVertexCount(), dX, dY, coordinateOrigin);
-        SampleGridRenderer.sampleSPT(spt, sampleGrid, gridSizeMeters * 0.7, gridSizeMeters, V0, spt
-                .getOptions().getMaxWalkDistance(), Integer.MAX_VALUE, cosLat);
-        long t1 = System.currentTimeMillis();
-        LOG.info("Made SampleGrid from SPT in {} msec.", (int) (t1 - t0));
-    }
-
     /**
      * Create the SampleGrid from whatever values are already in the TimeSurface, rather than looking at the SPT.
      * This is not really ideal since it includes only intersection nodes, and no points along the road segments.
      */
     public void makeSampleGridWithoutSPT () {
-        long t0 = System.currentTimeMillis();
-        final double gridSizeMeters = 300; // Todo: set dynamically and make sure this matches isoline builder params
         // Off-road max distance MUST be APPROX EQUALS to the grid precision
         // TODO: Loosen this restriction (by adding more closing sample).
         // Change the 0.8 magic factor here with caution.
-        final double D0 = 0.8 * gridSizeMeters; // offroad walk distance roughly grid size
-        final double V0 = 1.00; // off-road walk speed in m/sec
-        Coordinate coordinateOrigin = new Coordinate();
-        final double cosLat = FastMath.cos(toRadians(coordinateOrigin.y));
-        double dY = Math.toDegrees(gridSizeMeters / SphericalDistanceLibrary.RADIUS_OF_EARTH_IN_M);
-        double dX = dY / cosLat;
-        sampleGrid = new SparseMatrixZSampleGrid<WTWD>(16, this.times.size(), dX, dY, coordinateOrigin);
-        AccumulativeGridSampler.AccumulativeMetric<WTWD> metric = new SampleGridRenderer.WTWDAccumulativeMetric(cosLat, D0, V0, gridSizeMeters);
-        AccumulativeGridSampler<WTWD> sampler = new AccumulativeGridSampler<WTWD>(sampleGrid, metric);
         // Iterate over every vertex in this timesurface, adding it to the ZSampleGrid
         // TODO propagation along street geometries could happen at this stage, rather than when the SPT is still available.
-        for (TObjectIntIterator<Vertex> iter = times.iterator(); iter.hasNext(); ) {
-            iter.advance();
-            Vertex vertex = iter.key();
-            int time = iter.value();
-            WTWD z = new WTWD();
-            z.w = 1.0;
-            z.d = 0.0;
-            z.wTime = time;
-            z.wBoardings = 0; // unused
-            z.wWalkDist = 0; // unused
-            sampler.addSamplingPoint(vertex.getCoordinate(), z, V0);
-        }
-        sampler.close();
-        long t1 = System.currentTimeMillis();
-        LOG.info("Made scalar SampleGrid from TimeSurface in {} msec.", (int) (t1 - t0));
+        sampleGrid = sampleGridBuilder.makeSampleGridWithoutSPT(times);
     }
 
     /**
