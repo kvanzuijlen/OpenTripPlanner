@@ -21,20 +21,54 @@ import junit.framework.TestCase;
 
 public class TestMessages extends TestCase {
 
-    public void testLanguages() {
+    public void testLanguagesMultipleGetMethods() {
 
         // Force default to make test work on non-US machines
         Locale.setDefault(new Locale("en", "US"));
 
-        String e = Message.GEOCODE_FROM_AMBIGUOUS.get();
-        String f = Message.GEOCODE_FROM_AMBIGUOUS.get(Locale.CANADA_FRENCH);
-        String s = Message.GEOCODE_FROM_AMBIGUOUS.get(new Locale("es"));
+        String english = Message.GEOCODE_FROM_AMBIGUOUS.get();
+        String french = Message.GEOCODE_FROM_AMBIGUOUS.get(Locale.CANADA_FRENCH);
+        String spanish = Message.GEOCODE_FROM_AMBIGUOUS.get(new Locale("es"));
 
-        TestCase.assertNotNull(e);
-        TestCase.assertNotNull(f);
-        TestCase.assertNotNull(s);
-        TestCase.assertNotSame(e, f);
-        TestCase.assertNotSame(e, s);
-        TestCase.assertNotSame(f, s);
+        TestCase.assertNotNull(english);
+        TestCase.assertNotNull(french);
+        TestCase.assertNotNull(spanish);
+        TestCase.assertNotSame(english, french);
+        TestCase.assertNotSame(english, spanish);
+        TestCase.assertNotSame(french, spanish);
+    }
+
+    public void testDefaultLanguage() {
+        Locale.setDefault(new Locale("en", "US"));
+
+        String english = Message.GEOCODE_FROM_AMBIGUOUS.get();
+
+        TestCase.assertNotNull(english);
+    }
+
+    public void testGetLanguageWithEnum() {
+        Locale.setDefault(new Locale("en", "US"));
+
+        String english = Message.GEOCODE_FROM_AMBIGUOUS.get(Locale.ENGLISH);
+        String french = Message.GEOCODE_FROM_AMBIGUOUS.get(Locale.CANADA_FRENCH);
+
+        TestCase.assertNotNull(english);
+        TestCase.assertNotNull(french);
+        TestCase.assertNotSame("Test errored, English shouldn't be the same as French", english, french);
+    }
+
+    public void testGetLanguageFromNewLocale() {
+        Locale.setDefault(new Locale("en", "US"));
+
+        String english = Message.GEOCODE_FROM_AMBIGUOUS.get(new Locale("en"));
+        String french = Message.GEOCODE_FROM_AMBIGUOUS.get(new Locale("fr"));
+        String spanish = Message.GEOCODE_FROM_AMBIGUOUS.get(new Locale("es"));
+
+        TestCase.assertNotNull(english);
+        TestCase.assertNotNull(french);
+        TestCase.assertNotNull(spanish);
+        TestCase.assertNotSame("Test errored, English shouldn't be the same as French", english, french);
+        TestCase.assertNotSame("Test errored, English shouldn't be the same as Spanish", english, spanish);
+        TestCase.assertNotSame("Test errored, French shouldn't be the same as Spanish", french, spanish);
     }
 }
