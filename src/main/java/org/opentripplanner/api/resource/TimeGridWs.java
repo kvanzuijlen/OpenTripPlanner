@@ -109,7 +109,7 @@ public class TimeGridWs extends RoutingResource {
             tgRequest.coordinateOrigin = new GenericLocation(null, coordinateOrigin).getCoordinate();
 
         // Get a sample grid
-        ZSampleGrid<WTWD> sampleGrid = router.getSampleGridRenderer(tgRequest, sptRequest);
+        ZSampleGrid<WTWD> sampleGrid = router.getSampleGrid(tgRequest, sptRequest);
 
         int cols = sampleGrid.getXMax() - sampleGrid.getXMin() + 1;
         int rows = sampleGrid.getYMax() - sampleGrid.getYMin() + 1;
