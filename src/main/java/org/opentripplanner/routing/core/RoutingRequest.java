@@ -621,8 +621,11 @@ public class RoutingRequest implements Cloneable, Serializable {
     }
     
     public void setOtherThanPreferredRoutesPenalty(int penalty) {
-        if(penalty < 0) penalty = 0;
-        this.otherThanPreferredRoutesPenalty = penalty;
+        int penaltyValue = penalty;
+        if(penalty < 0) {
+            penaltyValue = 0;
+        }
+        this.otherThanPreferredRoutesPenalty = penaltyValue;
     }
     
     public void setUnpreferredAgencies(String s) {
@@ -962,22 +965,22 @@ public class RoutingRequest implements Cloneable, Serializable {
      */
     @Override
     public int hashCode() {
-        int hashCode = new Double(walkSpeed).hashCode() + new Double(bikeSpeed).hashCode()
-                + new Double(carSpeed).hashCode() + new Double(maxWeight).hashCode()
+        int hashCode = Double.valueOf(walkSpeed).hashCode() + Double.valueOf(bikeSpeed).hashCode()
+                + Double.valueOf(carSpeed).hashCode() + Double.valueOf(maxWeight).hashCode()
                 + (int) (worstTime & 0xffffffff) + modes.hashCode()
                 + (arriveBy ? 8966786 : 0) + (wheelchairAccessible ? 731980 : 0)
-                + optimize.hashCode() + new Double(maxWalkDistance).hashCode()
-                + new Double(maxTransferWalkDistance).hashCode()
-                + new Double(transferPenalty).hashCode() + new Double(maxSlope).hashCode()
-                + new Double(walkReluctance).hashCode() + new Double(waitReluctance).hashCode()
-                + new Double(waitAtBeginningFactor).hashCode() * 15485863
+                + optimize.hashCode() + Double.valueOf(maxWalkDistance).hashCode()
+                + Double.valueOf(maxTransferWalkDistance).hashCode()
+                + Double.valueOf(transferPenalty).hashCode() + Double.valueOf(maxSlope).hashCode()
+                + Double.valueOf(walkReluctance).hashCode() + Double.valueOf(waitReluctance).hashCode()
+                + Double.valueOf(waitAtBeginningFactor).hashCode() * 15485863
                 + walkBoardCost + bikeBoardCost + bannedRoutes.hashCode()
                 + bannedTrips.hashCode() * 1373 + transferSlack * 20996011
                 + (int) nonpreferredTransferPenalty + (int) transferPenalty * 163013803
-                + new Double(triangleSafetyFactor).hashCode() * 195233277
-                + new Double(triangleSlopeFactor).hashCode() * 136372361
-                + new Double(triangleTimeFactor).hashCode() * 790052899
-                + new Double(stairsReluctance).hashCode() * 315595321
+                + Double.valueOf(triangleSafetyFactor).hashCode() * 195233277
+                + Double.valueOf(triangleSlopeFactor).hashCode() * 136372361
+                + Double.valueOf(triangleTimeFactor).hashCode() * 790052899
+                + Double.valueOf(stairsReluctance).hashCode() * 315595321
                 + maxPreTransitTime * 63061489
                 + new Long(clampInitialWait).hashCode() * 209477
                 + new Boolean(reverseOptimizeOnTheFly).hashCode() * 95112799

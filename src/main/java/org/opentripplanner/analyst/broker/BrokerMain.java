@@ -23,9 +23,13 @@ public class BrokerMain implements Runnable {
 
     private static final String DEFAULT_BIND_ADDRESS = "0.0.0.0";
 
-    Properties config = new Properties();
+    private Properties config = new Properties();
 
     public Broker broker;
+
+    BrokerMain(Properties brokerConfig) {
+        this.config = brokerConfig;
+    }
 
     public static void main(String[] args) {
 
@@ -53,10 +57,6 @@ public class BrokerMain implements Runnable {
         // Create instance and run in the current thread.
         new BrokerMain(brokerConfig).run();
 
-    }
-
-    public BrokerMain(Properties brokerConfig) {
-        this.config = brokerConfig;
     }
 
     public void run() {
