@@ -122,7 +122,7 @@ public class TNPropagatedTimesStore {
 
             switch (confidenceCalculationMethod) {
             case BOOTSTRAP:
-                nextRandom = calculateAndGetNextRandom(randomNumbers, nextRandom, stop, count, timeList);
+                calculateAndGetNextRandom(randomNumbers, nextRandom, stop, count, timeList);
 
                 break;
             case PERCENTILE:
@@ -142,7 +142,7 @@ public class TNPropagatedTimesStore {
         }
     }
 
-    private int calculateAndGetNextRandom(int[] randomNumbers, int nextRandom, int stop, int count, TIntList timeList) {
+    private void calculateAndGetNextRandom(int[] randomNumbers, int nextRandom, int stop, int count, TIntList timeList) {
         // now bootstrap out a 95% confidence interval on the time
         int[] bootMeans = new int[N_BOOTSTRAPS];
         for (int boot = 0; boot < N_BOOTSTRAPS; boot++) {
@@ -162,7 +162,6 @@ public class TNPropagatedTimesStore {
         mins[stop] = bootMeans[N_BOOTSTRAPS / 40];
         // 97.5 percentile of distribution of means
         maxs[stop] = bootMeans[N_BOOTSTRAPS - N_BOOTSTRAPS / 40];
-        return nextRandom;
     }
 
     /**
